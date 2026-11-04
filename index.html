@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  CURSO INTERACTIVO OPERADOR DE EXCAVADORA
+  Preparación para evaluación de operadores en minería
+  ------------------------------------------------------------
+  - Aplicación de una sola página (HTML + CSS + JS vanilla).
+  - Sin dependencias externas: funciona abriendo el archivo.
+  - Optimizada para celular y personas mayores de 60 años.
+  - Guarda estadísticas con LocalStorage.
+  - Instalable como app (PWA) cuando se abre desde un enlace.
+  ============================================================
+-->
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Pantalla vertical, ancho del dispositivo, sin zoom accidental -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b4f8a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Operador Excavadora" />
+  <title>Curso Operador de Excavadora</title>
+
+  <!-- Ícono de la app (SVG en línea, casco de seguridad) para "Agregar a pantalla de inicio" -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b4f8a'/%3E%3Cpath d='M20 62c0-17 13-30 30-30s30 13 30 30' fill='none' stroke='%23ff7a00' stroke-width='8' stroke-linecap='round'/%3E%3Crect x='14' y='60' width='72' height='10' rx='5' fill='%23ff7a00'/%3E%3C/svg%3E" />
+
+  <!-- Manifest embebido (Base64) para que el navegador ofrezca instalar la app -->
+  <link rel="manifest" id="manifest-link" />
+
+  <style>
+    /* ======================= VARIABLES DE COLOR ======================= */
+    :root{
+      --azul:        #0b4f8a;   /* Azul minería */
+      --azul-osc:    #083a66;
+      --naranjo:     #ff7a00;   /* Naranjo seguridad */
+      --blanco:      #ffffff;
+      --verde:       #1f9d55;   /* Verde éxito */
+      --verde-claro: #e4f7ec;
+      --rojo:        #d1342f;   /* Rojo error */
+      --rojo-claro:  #fdeaea;
+      --gris-fondo:  #eef2f6;
+      --gris-texto:  #243447;
+      --gris-suave:  #5b6b7c;
+      --sombra:      0 6px 20px rgba(8, 58, 102, .15);
+      --radio:       22px;
+    }
+
+    /* ======================= BASE / RESET ======================= */
+    *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body{ margin:0; padding:0; }
+    body{
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      background: var(--gris-fondo);
+      color: var(--gris-texto);
+      font-size: 20px;              /* Letra grande base */
+      line-height: 1.55;
+      -webkit-text-size-adjust: 100%;
+      overscroll-behavior-y: contain;
+    }
+
+    /* Contenedor centrado tipo app móvil */
+    .app{
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--gris-fondo);
+    }
+
+    /* ======================= ENCABEZADO ======================= */
+    header{
+      background: linear-gradient(135deg, var(--azul), var(--azul-osc));
+      color: var(--blanco);
+      padding: 18px 20px calc(18px + env(safe-area-inset-top));
+      padding-top: calc(18px + env(safe-area-inset-top));
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: var(--sombra);
+    }
+    header .logo{
+      width: 44px; height: 44px; flex: none;
+      background: var(--naranjo);
+      border-radius: 12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size: 26px;
+    }
+    header h1{ font-size: 20px; margin:0; font-weight: 800; letter-spacing:.2px; }
+    header .sub{ font-size: 14px; opacity:.85; margin-top:2px; }
+    /* Botón volver */
+    .btn-volver{
+      background: rgba(255,255,255,.18);
+      border: none; color: var(--blanco);
+      font-size: 24px; font-weight: 700;
+      width: 46px; height: 46px; border-radius: 12px;
+      flex: none; cursor: pointer;
+    }
+    .btn-volver:active{ transform: scale(.94); }
+
+    /* ======================= CONTENIDO / VISTAS ======================= */
+    main{ flex: 1; padding: 20px 18px 40px; }
+    .vista{ display: none; animation: aparecer .35s ease; }
+    .vista.activa{ display: block; }
+    @keyframes aparecer{
+      from{ opacity:0; transform: translateY(14px); }
+      to  { opacity:1; transform: translateY(0); }
+    }
+
+    /* ======================= BOTONES GRANDES ======================= */
+    .btn{
+      display: flex; align-items:center; justify-content:center;
+      gap: 12px;
+      width: 100%;
+      border: none;
+      border-radius: var(--radio);
+      padding: 22px 20px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--blanco);
+      background: var(--azul);
+      cursor: pointer;
+      box-shadow: var(--sombra);
+      margin-bottom: 16px;
+      transition: transform .12s ease, box-shadow .12s ease;
+      text-align: center;
+    }
+    .btn:active{ transform: translateY(2px) scale(.99); }
+    .btn .ico{ font-size: 28px; }
+    .btn.naranjo{ background: var(--naranjo); }
+    .btn.verde{ background: var(--verde); }
+    .btn.rojo{ background: var(--rojo); }
+    .btn.gris{ background:#fff; color: var(--azul); border:2px solid #d6e0ea; box-shadow:none; }
+    .btn.chico{ font-size: 18px; padding: 16px; margin-bottom: 12px; }
+    .btn:disabled{ opacity:.5; cursor: default; }
+
+    /* ======================= TARJETAS ======================= */
+    .tarjeta{
+      background: var(--blanco);
+      border-radius: var(--radio);
+      padding: 22px;
+      box-shadow: var(--sombra);
+      margin-bottom: 18px;
+    }
+    .tarjeta h2{ margin:0 0 10px; font-size: 22px; color: var(--azul); }
+    .tarjeta p{ margin: 0 0 12px; }
+
+    /* Portada */
+    .portada-hero{
+      text-align:center;
+      background: linear-gradient(135deg, var(--azul), var(--azul-osc));
+      color: var(--blanco);
+      border-radius: var(--radio);
+      padding: 30px 22px;
+      box-shadow: var(--sombra);
+      margin-bottom: 22px;
+    }
+    .portada-hero .emoji{ font-size: 64px; line-height:1; }
+    .portada-hero h2{ color: var(--blanco); font-size: 26px; margin: 12px 0 6px; }
+    .portada-hero p{ opacity:.9; margin:0; font-size: 17px; }
+
+    /* Estadísticas en portada */
+    .stats{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat{
+      background: var(--blanco); border-radius: 18px; padding: 16px;
+      box-shadow: var(--sombra); text-align:center;
+    }
+    .stat .num{ font-size: 30px; font-weight: 800; color: var(--azul); }
+    .stat .lbl{ font-size: 14px; color: var(--gris-suave); }
+
+    /* ======================= LISTA DE MÓDULOS ======================= */
+    .modulo-item{
+      display:flex; align-items:center; gap: 14px;
+      background: var(--blanco);
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: var(--sombra);
+      margin-bottom: 12px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform .12s ease, border-color .12s;
+    }
+    .modulo-item:active{ transform: scale(.98); border-color: var(--naranjo); }
+    .modulo-item .n{
+      flex:none; width: 46px; height: 46px; border-radius: 12px;
+      background: var(--azul); color:#fff; font-weight:800; font-size: 20px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .modulo-item .t{ font-size: 18px; font-weight: 700; }
+    .modulo-item.visto .n{ background: var(--verde); }
+    .modulo-item .flecha{ margin-left:auto; color: var(--naranjo); font-size: 26px; font-weight:800; }
+
+    /* Detalle de módulo */
+    .consejo{
+      background: #fff6ec;
+      border-left: 8px solid var(--naranjo);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+    }
+    .consejo b{ color: #b35600; display:block; margin-bottom: 4px; font-size: 18px; }
+    .ejercicio{
+      background: var(--verde-claro);
+      border-radius: 16px;
+      padding: 18px;
+      margin-top: 18px;
+    }
+    .ejercicio .preg{ font-weight: 800; margin-bottom: 14px; font-size: 19px; }
+    .opcion-ej{
+      display:block; width:100%; text-align:left;
+      background:#fff; border:2px solid #cfe3d6; border-radius: 14px;
+      padding: 14px 16px; margin-bottom: 10px; font-size: 18px;
+      cursor:pointer; color: var(--gris-texto); font-weight:600;
+    }
+    .opcion-ej.ok{ background: var(--verde); color:#fff; border-color: var(--verde); }
+    .opcion-ej.mal{ background: var(--rojo); color:#fff; border-color: var(--rojo); }
+
+    /* ======================= PRUEBA ======================= */
+    .barra-wrap{
+      background:#d6e0ea; border-radius: 20px; height: 18px; overflow:hidden; margin: 10px 0 6px;
+    }
+    .barra{
+      background: linear-gradient(90deg, var(--naranjo), #ffa94d);
+      height: 100%; width: 0%; border-radius: 20px;
+      transition: width .4s ease;
+    }
+    .contador{
+      font-size: 17px; font-weight: 700; color: var(--gris-suave);
+      text-align:center; margin-bottom: 4px;
+    }
+    .pregunta-txt{
+      font-size: 23px; font-weight: 800; line-height:1.4;
+      margin: 10px 0 20px; color: var(--gris-texto);
+    }
+    .opcion{
+      display:flex; align-items:center; gap: 14px;
+      width:100%; text-align:left;
+      background: var(--blanco);
+      border: 3px solid #d6e0ea;
+      border-radius: 18px;
+      padding: 18px 16px;
+      margin-bottom: 14px;
+      font-size: 19px; font-weight: 600;
+      color: var(--gris-texto);
+      cursor: pointer;
+      transition: transform .1s, border-color .1s, background .1s;
+    }
+    .opcion:active{ transform: scale(.99); }
+    .opcion .letra{
+      flex:none; width: 40px; height: 40px; border-radius: 10px;
+      background: var(--gris-fondo); color: var(--azul);
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 800; font-size: 20px;
+    }
+    .opcion.sel{ border-color: var(--azul); background:#eef5fc; }
+    .opcion.sel .letra{ background: var(--azul); color:#fff; }
+    .opcion:disabled{ cursor: default; }
+
+    /* ======================= FEEDBACK RESPUESTA ======================= */
+    .feedback{
+      border-radius: var(--radio);
+      padding: 24px 20px;
+      text-align:center;
+      color:#fff;
+      box-shadow: var(--sombra);
+      margin-bottom: 18px;
+    }
+    .feedback.ok{ background: var(--verde); }
+    .feedback.mal{ background: var(--rojo); }
+    .feedback .icono{ font-size: 60px; line-height:1; }
+    .feedback h2{ color:#fff; font-size: 30px; margin: 8px 0; }
+    .feedback .correcta{
+      background: rgba(255,255,255,.2); border-radius: 14px; padding: 12px;
+      font-size: 18px; margin: 12px 0; font-weight:700;
+    }
+    .feedback .expl{
+      background: rgba(255,255,255,.16); border-radius: 14px; padding: 14px 16px;
+      font-size: 17px; text-align:left; line-height:1.5;
+    }
+
+    /* ======================= RESULTADO FINAL ======================= */
+    .medidor-wrap{ display:flex; justify-content:center; margin: 10px 0 20px; }
+    .medidor{ position: relative; width: 220px; height: 220px; }
+    .medidor svg{ transform: rotate(-90deg); }
+    .medidor .centro{
+      position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+    }
+    .medidor .pct{ font-size: 52px; font-weight: 900; color: var(--azul); }
+    .medidor .pct-lbl{ font-size: 15px; color: var(--gris-suave); font-weight:700; }
+
+    .resumen-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .resumen-grid .celda{ background:#fff; border-radius:16px; padding:14px 8px; text-align:center; box-shadow: var(--sombra); }
+    .resumen-grid .celda .n{ font-size: 26px; font-weight: 800; }
+    .resumen-grid .celda .l{ font-size: 13px; color: var(--gris-suave); }
+    .celda.c .n{ color: var(--verde); }
+    .celda.i .n{ color: var(--rojo); }
+    .celda.t .n{ color: var(--azul); }
+
+    .veredicto{
+      border-radius: var(--radio); padding: 22px; text-align:center;
+      font-size: 24px; font-weight: 800; color:#fff; margin-bottom: 18px;
+      box-shadow: var(--sombra);
+    }
+    .veredicto.exc{ background: linear-gradient(135deg,#7a3ff2,#b06bff); }
+    .veredicto.apr{ background: var(--verde); }
+    .veredicto.ref{ background: var(--naranjo); }
+    .veredicto.rep{ background: var(--rojo); }
+
+    /* Revisión de errores */
+    .error-item{
+      background:#fff; border-radius: 16px; padding: 18px; margin-bottom: 14px;
+      box-shadow: var(--sombra); border-left: 8px solid var(--rojo);
+    }
+    .error-item .q{ font-weight: 800; margin-bottom: 10px; font-size: 18px; }
+    .error-item .tu{ color: var(--rojo); font-weight:700; margin-bottom: 4px; }
+    .error-item .ok{ color: var(--verde); font-weight:700; margin-bottom: 10px; }
+    .error-item .ex{ background: var(--gris-fondo); border-radius: 12px; padding: 12px; font-size: 16px; }
+
+    /* ======================= MODAL CONFIRMACIÓN ======================= */
+    .modal-fondo{
+      position: fixed; inset:0; background: rgba(8,58,102,.55);
+      display:flex; align-items:center; justify-content:center; z-index: 500; padding: 24px;
+      animation: aparecer .2s ease;
+    }
+    .modal-caja{ background:#fff; border-radius: var(--radio); padding: 24px; max-width: 420px; width:100%; box-shadow: var(--sombra); }
+    .modal-txt{ font-size: 20px; font-weight: 800; margin-bottom: 18px; text-align:center; color: var(--gris-texto); }
+
+    /* ======================= CONFETTI ======================= */
+    #confetti{ position: fixed; inset:0; pointer-events:none; z-index: 999; }
+
+    /* ======================= PIE ======================= */
+    footer{ text-align:center; font-size: 13px; color: var(--gris-suave); padding: 18px; }
+
+    /* Aviso instalación */
+    .aviso-instalar{
+      background:#fff; border:2px dashed var(--naranjo); border-radius: 16px;
+      padding: 14px 16px; font-size: 15px; margin-bottom: 18px; color: var(--gris-texto);
+    }
+    .aviso-instalar b{ color: var(--naranjo); }
+
+    @media (max-width: 360px){
+      body{ font-size: 18px; }
+      .btn{ font-size: 20px; }
+      .pregunta-txt{ font-size: 21px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ======================= ENCABEZADO ======================= -->
+    <header>
+      <button class="btn-volver" id="btnVolver" style="display:none" aria-label="Volver">‹</button>
+      <div class="logo">🚜</div>
+      <div>
+        <h1 id="tituloHeader">Operador de Excavadora</h1>
+        <div class="sub" id="subHeader">Preparación para minería</div>
+      </div>
+    </header>
+
+    <main>
+      <!-- ============================================================
+           VISTA: INICIO
+           ============================================================ -->
+      <section class="vista activa" id="v-inicio">
+        <div class="portada-hero">
+          <div class="emoji">🚜</div>
+          <h2>Curso Interactivo<br>Operador de Excavadora</h2>
+          <p>Preparación para evaluación de operadores en minería</p>
+        </div>
+
+        <!-- Estadísticas guardadas -->
+        <div class="stats">
+          <div class="stat"><div class="num" id="stMejor">—</div><div class="lbl">Mejor puntaje</div></div>
+          <div class="stat"><div class="num" id="stUltimo">—</div><div class="lbl">Último puntaje</div></div>
+          <div class="stat"><div class="num" id="stIntentos">0</div><div class="lbl">Intentos</div></div>
+          <div class="stat"><div class="num" id="stFecha">—</div><div class="lbl">Última fecha</div></div>
+        </div>
+
+        <button class="btn" onclick="irCurso()"><span class="ico">📚</span> CURSO</button>
+        <button class="btn naranjo" onclick="iniciarPrueba()"><span class="ico">📝</span> PRUEBA</button>
+
+        <div class="aviso-instalar">
+          💡 <b>Consejo:</b> para tener esta app siempre en tu teléfono, abre el menú del navegador y elige
+          <b>"Agregar a pantalla de inicio"</b>. Quedará como una aplicación y funciona sin internet.
+        </div>
+      </section>
+
+      <!-- ============================================================
+           VISTA: LISTA DE MÓDULOS
+           ============================================================ -->
+      <section class="vista" id="v-curso">
+        <div class="tarjeta">
+          <h2>📚 Módulos del curso</h2>
+          <p>Toca un módulo para estudiarlo. Los módulos en verde ya los revisaste.</p>
+        </div>
+        <div id="listaModulos"></div>
+      </section>
+
+      <!-- ============================================================
+           VISTA: DETALLE DE MÓDULO
+           ============================================================ -->
+      <section class="vista" id="v-modulo">
+        <div id="detalleModulo"></div>
+        <button class="btn verde" onclick="irCurso()"><span class="ico">✔</span> Terminé este módulo</button>
+      </section>
+
+      <!-- ============================================================
+           VISTA: PRUEBA (pregunta)
+           ============================================================ -->
+      <section class="vista" id="v-prueba">
+        <div class="contador" id="contador">Pregunta 1 de 80</div>
+        <div class="barra-wrap"><div class="barra" id="barra"></div></div>
+        <div class="pregunta-txt" id="preguntaTxt"></div>
+        <div id="opciones"></div>
+        <button class="btn naranjo" id="btnResponder" onclick="responder()" disabled><span class="ico">✓</span> Responder</button>
+      </section>
+
+      <!-- ============================================================
+           VISTA: FEEDBACK
+           ============================================================ -->
+      <section class="vista" id="v-feedback">
+        <div id="feedbackBox"></div>
+        <button class="btn" id="btnSiguiente" onclick="siguientePregunta()">Siguiente pregunta ›</button>
+      </section>
+
+      <!-- ============================================================
+           VISTA: RESULTADO FINAL
+           ============================================================ -->
+      <section class="vista" id="v-resultado">
+        <div class="medidor-wrap">
+          <div class="medidor">
+            <svg width="220" height="220" viewBox="0 0 220 220">
+              <circle cx="110" cy="110" r="95" fill="none" stroke="#e1e8ef" stroke-width="20"/>
+              <circle id="aroPct" cx="110" cy="110" r="95" fill="none" stroke="#1f9d55" stroke-width="20"
+                      stroke-linecap="round" stroke-dasharray="597" stroke-dashoffset="597"/>
+            </svg>
+            <div class="centro">
+              <div class="pct" id="pctNum">0%</div>
+              <div class="pct-lbl">de logro</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="resumen-grid">
+          <div class="celda t"><div class="n" id="rTotal">0</div><div class="l">Total</div></div>
+          <div class="celda c"><div class="n" id="rCorrectas">0</div><div class="l">Correctas</div></div>
+          <div class="celda i"><div class="n" id="rIncorrectas">0</div><div class="l">Incorrectas</div></div>
+        </div>
+
+        <div class="veredicto" id="veredicto"></div>
+
+        <button class="btn gris" id="btnRevisar" onclick="revisarErrores()"><span class="ico">🔍</span> Revisar respuestas incorrectas</button>
+        <button class="btn naranjo" onclick="iniciarPrueba()"><span class="ico">🔄</span> Realizar nueva prueba</button>
+        <button class="btn gris" onclick="irInicio()"><span class="ico">🏠</span> Volver al inicio</button>
+      </section>
+
+      <!-- ============================================================
+           VISTA: REVISIÓN DE ERRORES
+           ============================================================ -->
+      <section class="vista" id="v-revision">
+        <div class="tarjeta">
+          <h2>🔍 Respuestas incorrectas</h2>
+          <p id="revSubtitulo"></p>
+        </div>
+        <div id="listaErrores"></div>
+        <button class="btn gris" onclick="mostrarVista('v-resultado')"><span class="ico">‹</span> Volver al resultado</button>
+      </section>
+    </main>
+
+    <footer>Material de estudio · No es un examen oficial · Uso educativo</footer>
+  </div>
+
+  <!-- Cuadro de confirmación propio (reemplaza al confirm() nativo) -->
+  <div id="modal" class="modal-fondo" style="display:none">
+    <div class="modal-caja">
+      <div class="modal-txt" id="modalTexto">¿Deseas salir de la prueba?</div>
+      <button class="btn rojo chico" id="modalSi">Sí, salir</button>
+      <button class="btn gris chico" id="modalNo">No, continuar</button>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script>
+  /* ================================================================
+     1. DATOS: MÓDULOS DEL CURSO (20 módulos)
+     Cada módulo: { titulo, texto, consejo, ejercicio{preg, opciones, correcta} }
+     ================================================================ */
+  const MODULOS = [
+    {
+      titulo: "Seguridad minera",
+      texto: "La seguridad es lo primero en toda faena minera. Antes que la producción, está que todos vuelvan sanos a su casa. Esto significa respetar los procedimientos, usar el equipo de protección y reportar cualquier condición de riesgo. Un buen operador nunca arriesga su vida ni la de sus compañeros para ganar tiempo. Ante la duda, siempre se detiene la tarea y se pregunta.",
+      consejo: "Si algo se ve inseguro, tienes el derecho y el deber de detener el trabajo. Nadie te puede obligar a operar en condiciones de riesgo.",
+      ejercicio: { preg: "¿Qué es lo más importante en una faena minera?", opciones:["Cumplir la producción del día","Que todas las personas vuelvan sanas a su casa","Terminar antes que los demás","Ahorrar combustible"], correcta:1 }
+    },
+    {
+      titulo: "Uso de EPP",
+      texto: "El EPP (Elementos de Protección Personal) es tu última barrera de protección. Incluye casco, lentes de seguridad, protección auditiva, zapatos de seguridad, guantes y chaleco reflectante. Debe usarse completo, en buen estado y de la talla correcta. Un EPP dañado o mal puesto no protege. Revisa tu EPP al inicio de cada turno.",
+      consejo: "Un casco con golpes o grietas ya no sirve: cámbialo. El EPP dañado da una falsa sensación de seguridad.",
+      ejercicio: { preg: "¿Qué debes hacer si tu casco tiene una grieta?", opciones:["Seguir usándolo con cuidado","Repararlo con cinta","Cambiarlo por uno en buen estado","Usarlo solo medio turno"], correcta:2 }
+    },
+    {
+      titulo: "Inspección preoperacional",
+      texto: "Antes de operar, se realiza el chequeo preoperacional (check list) de la excavadora. Se revisan niveles de aceite, refrigerante, combustible, estado de orugas, mangueras hidráulicas, luces, alarmas, extintor, cinturón de seguridad y fugas. Esta inspección se hace con el equipo detenido y se registra. Si hay una falla crítica, el equipo NO se opera.",
+      consejo: "La inspección preoperacional no es un trámite: es lo que evita que una falla pequeña se convierta en un accidente grave.",
+      ejercicio: { preg: "Si en la inspección detectas una fuga importante de aceite hidráulico, debes:", opciones:["Operar con cuidado igual","No operar y reportar la falla","Limpiar y seguir trabajando","Esperar a que se seque"], correcta:1 }
+    },
+    {
+      titulo: "Componentes de una excavadora",
+      texto: "La excavadora tiene partes principales: el tren de rodaje (orugas), la estructura giratoria superior o chasis, la cabina, el motor, la pluma (boom), el brazo (stick) y el balde o cucharón. La torreta gira 360°. Conocer cada componente ayuda a operar mejor y a detectar fallas. El contrapeso trasero equilibra el peso de la carga en el balde.",
+      consejo: "El contrapeso trasero gira junto con la cabina. Siempre revisa que no haya personas ni objetos en el radio de giro.",
+      ejercicio: { preg: "¿Para qué sirve el contrapeso de la excavadora?", opciones:["Para aumentar la velocidad","Para equilibrar el peso de la carga","Para subir pendientes","Para enfriar el motor"], correcta:1 }
+    },
+    {
+      titulo: "Sistema hidráulico",
+      texto: "La excavadora funciona con un sistema hidráulico: una bomba envía aceite a presión que mueve los cilindros de la pluma, brazo y balde, y los motores de giro y traslación. El aceite hidráulico debe estar limpio y en el nivel correcto. Una fuga disminuye la fuerza y puede causar un incendio. Nunca busques una fuga a presión con la mano: el chorro puede perforar la piel.",
+      consejo: "El aceite hidráulico a presión puede atravesar la piel. Para buscar fugas usa un cartón, nunca la mano.",
+      ejercicio: { preg: "¿Cómo se debe buscar una fuga de aceite a presión?", opciones:["Con la mano con guante","Con un trozo de cartón","Mirando de muy cerca","Con el motor apagado y frío solamente"], correcta:1 }
+    },
+    {
+      titulo: "Trabajo en pendientes",
+      texto: "Al trabajar en pendientes, la excavadora debe posicionarse de frente a la pendiente, nunca de costado, para evitar el volcamiento lateral. Se desciende y asciende en línea recta, con el balde bajo para dar estabilidad. Se evita girar la torreta cargada en una pendiente. La velocidad debe ser baja y controlada.",
+      consejo: "En pendiente, mantén el balde bajo y cerca del suelo: baja el centro de gravedad y reduce el riesgo de volcar.",
+      ejercicio: { preg: "Al desplazarte en una pendiente, la excavadora debe ir:", opciones:["De costado para ver mejor","De frente, en línea recta","Girando para equilibrar","Lo más rápido posible"], correcta:1 }
+    },
+    {
+      titulo: "Taludes",
+      texto: "Un talud es la pared inclinada de una excavación o banco. Operar cerca de un talud tiene riesgo de derrumbe o caída de rocas. Se debe respetar la distancia de seguridad al borde (pata del talud y cresta), no socavar la base, y estar atento a grietas, desprendimientos o filtraciones de agua que anuncian inestabilidad.",
+      consejo: "Nunca socaves la base de un talud dejando material colgando arriba: puede derrumbarse sobre la máquina.",
+      ejercicio: { preg: "¿Qué señal indica que un talud puede derrumbarse?", opciones:["Que esté seco","Grietas y desprendimientos de material","Que tenga poca altura","Que haya buena iluminación"], correcta:1 }
+    },
+    {
+      titulo: "Carguío de camiones",
+      texto: "El carguío consiste en llenar la tolva del camión con el balde de la excavadora. Se carga por el lado del conductor o según procedimiento, girando la torreta lo mínimo necesario. El balde nunca debe pasar sobre la cabina del camión. Se distribuye la carga de forma pareja y sin sobrecargar. El camión debe estar detenido y con freno aplicado.",
+      consejo: "Nunca pases el balde cargado por encima de la cabina del camión: si cae material, puede herir gravemente al conductor.",
+      ejercicio: { preg: "Durante el carguío, el balde NUNCA debe pasar por encima de:", opciones:["La tolva del camión","La cabina del conductor","El suelo","El contrapeso"], correcta:1 }
+    },
+    {
+      titulo: "Comunicación radial",
+      texto: "La radio es la herramienta de comunicación en faena. Se usa con mensajes cortos, claros y en el canal asignado. Primero se escucha para no interrumpir. Se identifica el equipo, se da el mensaje y se espera confirmación ('copiado', 'copiado y entendido'). La radio no se usa para conversaciones personales ni se deja el micrófono trabado.",
+      consejo: "Antes de hablar, escucha un momento el canal para no pisar la comunicación de otro equipo.",
+      ejercicio: { preg: "¿Cómo debe ser un mensaje por radio en faena?", opciones:["Largo y con detalles personales","Corto, claro y en el canal asignado","En cualquier canal disponible","Solo con señas"], correcta:1 }
+    },
+    {
+      titulo: "Bloqueo y etiquetado",
+      texto: "El bloqueo y etiquetado (LOTO) es el procedimiento para aislar energías peligrosas antes de mantener o intervenir un equipo. Cada persona pone su propio candado y tarjeta en el punto de bloqueo. Nadie retira el candado de otro. Esto garantiza que el equipo no pueda encenderse mientras alguien trabaja en él.",
+      consejo: "Solo quien pone su candado lo retira. Jamás saques el bloqueo de otro trabajador, aunque parezca que terminó.",
+      ejercicio: { preg: "¿Quién puede retirar un candado de bloqueo?", opciones:["El supervisor de turno","Cualquier operador","Solo la persona que lo puso","El de mantención"], correcta:2 }
+    },
+    {
+      titulo: "Emergencias",
+      texto: "Ante una emergencia (incendio, accidente, volcamiento), lo primero es mantener la calma, detener la operación de forma segura y dar aviso por radio indicando lugar y tipo de emergencia. No se exponen las personas para salvar la máquina. Debes conocer las vías de evacuación, el punto de encuentro y la ubicación del extintor.",
+      consejo: "Primero las personas, después el equipo. Una máquina se reemplaza; una vida, no.",
+      ejercicio: { preg: "Ante un incendio en tu equipo, lo primero es:", opciones:["Salvar la máquina","Ponerte a salvo y dar aviso por radio","Seguir operando lejos del fuego","Buscar la causa del fuego"], correcta:1 }
+    },
+    {
+      titulo: "Condiciones inseguras",
+      texto: "Una condición insegura es una situación del entorno o del equipo que puede causar un accidente: una fuga, un cable suelto, un talud inestable, poca iluminación, frenos en mal estado. Son del ambiente o la máquina, no de la conducta de la persona. Se deben reportar y corregir antes de continuar.",
+      consejo: "Reporta siempre las condiciones inseguras, aunque no te toquen a ti: puede evitar un accidente a otro compañero.",
+      ejercicio: { preg: "¿Cuál de estas es una CONDICIÓN insegura?", opciones:["Operar sin cinturón","Un talud con grietas","No usar casco","Hablar por teléfono al operar"], correcta:1 }
+    },
+    {
+      titulo: "Actos inseguros",
+      texto: "Un acto inseguro es un comportamiento de la persona que genera riesgo: operar sin EPP, exceder la velocidad, no usar cinturón, distraerse con el teléfono, saltarse procedimientos. A diferencia de la condición insegura, depende de la conducta. La mayoría de los accidentes se origina en actos inseguros.",
+      consejo: "La prisa es la causa de muchos actos inseguros. Tómate el tiempo de hacer la tarea bien y segura.",
+      ejercicio: { preg: "¿Cuál de estos es un ACTO inseguro?", opciones:["Un piso resbaladizo","Operar sin cinturón de seguridad","Una manguera rota","Poca luz en la zona"], correcta:1 }
+    },
+    {
+      titulo: "Manejo de combustible",
+      texto: "El abastecimiento de combustible se hace con el motor apagado, sin fumar ni usar el teléfono, y conectando la máquina a tierra para evitar chispas por electricidad estática. No se llena en exceso. Cualquier derrame se contiene de inmediato. El diésel es inflamable y sus vapores también.",
+      consejo: "Siempre apaga el motor antes de cargar combustible y nunca fumes cerca: los vapores del diésel se encienden con una chispa.",
+      ejercicio: { preg: "Al abastecer combustible, el motor debe estar:", opciones:["Encendido en ralentí","Apagado","A media marcha","Encendido con luces apagadas"], correcta:1 }
+    },
+    {
+      titulo: "Derrames ambientales",
+      texto: "Un derrame de aceite, combustible o grasa contamina el suelo y el agua. Ante un derrame se debe detener la fuente, contener con material absorbente (paños, barreras, kit antiderrame) y reportar. Nunca se tapa con tierra para esconderlo. El cuidado del medio ambiente es parte del trabajo del operador.",
+      consejo: "Todo equipo debe tener a mano un kit antiderrame. Conoce dónde está y cómo usarlo antes de necesitarlo.",
+      ejercicio: { preg: "Ante un derrame de aceite en el suelo debes:", opciones:["Taparlo con tierra","Contenerlo con material absorbente y reportar","Esperar a que se evapore","Lavarlo con agua"], correcta:1 }
+    },
+    {
+      titulo: "Señalización",
+      texto: "La señalización en faena indica rutas, peligros, velocidades y restricciones. Hay señales de prohibición (rojo), obligación (azul), advertencia (amarillo) e información (verde). También está la señalización de tránsito interno y los conos o barreras. El operador debe respetar toda la señalización y las indicaciones del señalero.",
+      consejo: "Las señales amarillas con triángulo son de advertencia: anuncian un peligro cercano. Reduce la velocidad al verlas.",
+      ejercicio: { preg: "Una señal de color rojo generalmente indica:", opciones:["Obligación","Prohibición","Información","Zona segura"], correcta:1 }
+    },
+    {
+      titulo: "Procedimientos de trabajo",
+      texto: "Cada tarea tiene un procedimiento (PTS / instructivo) que indica el paso a paso seguro. Antes de una tarea nueva o de riesgo se realiza el análisis de riesgos (ART / AST) y la charla de inicio. Seguir el procedimiento no es opcional: está escrito con base en accidentes ocurridos antes. Si el procedimiento no se puede cumplir, se detiene la tarea.",
+      consejo: "Si la realidad del terreno no coincide con el procedimiento, detente y consulta. No improvises un paso que no está escrito.",
+      ejercicio: { preg: "¿Qué se hace antes de iniciar una tarea de riesgo?", opciones:["Empezar rápido para avanzar","El análisis de riesgos y la charla de inicio","Esperar al final del turno","Nada, si ya la hiciste antes"], correcta:1 }
+    },
+    {
+      titulo: "Riesgos críticos",
+      texto: "Los riesgos críticos son aquellos que pueden causar la muerte: atropello por equipos, caída de rocas, volcamiento, interacción equipo-persona, energías peligrosas, caída de altura. Cada uno tiene controles obligatorios que no se pueden omitir. Identificar y respetar los controles críticos salva vidas.",
+      consejo: "La interacción entre equipos pesados y personas es uno de los mayores riesgos: nunca permitas gente a pie en tu radio de operación.",
+      ejercicio: { preg: "¿Cuál es un riesgo crítico en operación de excavadora?", opciones:["Rayar la pintura","Atropello por interacción equipo-persona","Gastar combustible","Ensuciar el balde"], correcta:1 }
+    },
+    {
+      titulo: "Fatiga y somnolencia",
+      texto: "La fatiga reduce la atención y el tiempo de reacción, igual que el alcohol. Dormir bien antes del turno, alimentarse e hidratarse y tomar las pausas son clave. Si sientes sueño o cansancio extremo operando, debes detenerte y avisar. Operar fatigado es una de las principales causas de accidentes graves en minería.",
+      consejo: "Si bostezas seguido, se te cierran los ojos o no recuerdas el último tramo, estás fatigado: detente y reporta de inmediato.",
+      ejercicio: { preg: "Si sientes mucho sueño mientras operas, debes:", opciones:["Seguir para terminar el turno","Detenerte y avisar a tu supervisor","Tomar más café y continuar","Abrir la ventana y seguir"], correcta:1 }
+    },
+    {
+      titulo: "Buenas prácticas operacionales",
+      texto: "Las buenas prácticas incluyen: calentar el motor antes de exigirlo, movimientos suaves sin golpes, no sobrecargar el balde, estacionar en terreno plano con el balde apoyado, bajar presión del sistema al detener, y dejar el equipo limpio y reportado para el turno siguiente. Operar con suavidad cuida el equipo y la seguridad.",
+      consejo: "Al terminar el turno, apoya el balde en el suelo, aplica frenos y deja reportada cualquier novedad para el operador siguiente.",
+      ejercicio: { preg: "Al estacionar la excavadora al final del turno, el balde debe quedar:", opciones:["En alto","Apoyado en el suelo","Girado hacia atrás","Lleno de material"], correcta:1 }
+    }
+  ];
+
+  /* ================================================================
+     2. DATOS: BANCO DE 100 PREGUNTAS
+     Estructura: { pregunta, opciones[4], correcta(index), explicacion }
+     ================================================================ */
+  const BANCO = [
+    /* ---------- SEGURIDAD MINERA (20) ---------- */
+    {pregunta:"¿Cuál es el principal objetivo de la seguridad en faena minera?",opciones:["Cumplir la meta de producción","Que todas las personas regresen sanas a su hogar","Reducir el consumo de combustible","Terminar el turno antes de la hora"],correcta:1,explicacion:"La vida y salud de las personas está por sobre cualquier meta productiva. La producción nunca justifica un riesgo."},
+    {pregunta:"Si detectas una condición de riesgo grave, tienes derecho a:",opciones:["Esperar instrucciones sin hacer nada","Detener la tarea hasta que se controle el riesgo","Seguir trabajando con más cuidado","Avisar al final del turno"],correcta:1,explicacion:"Todo trabajador tiene el derecho y el deber de detener una tarea cuando existe un riesgo grave e inminente."},
+    {pregunta:"La 'regla de oro' o principio básico de seguridad establece que:",opciones:["La producción es lo primero","Ninguna tarea es tan urgente que no se pueda hacer con seguridad","Solo el supervisor decide los riesgos","Los accidentes son inevitables"],correcta:1,explicacion:"Ninguna tarea justifica poner en riesgo la integridad de las personas; siempre hay tiempo para hacerla de forma segura."},
+    {pregunta:"¿Qué debes hacer antes de comenzar a operar tu equipo?",opciones:["Calentarlo a máxima potencia de inmediato","Realizar la inspección preoperacional","Cargar combustible con el motor andando","Girar la torreta para probar"],correcta:1,explicacion:"La inspección preoperacional permite detectar fallas antes de operar y es obligatoria al inicio del turno."},
+    {pregunta:"El radio de giro de la excavadora es peligroso porque:",opciones:["Consume más combustible","El contrapeso y la estructura pueden golpear o atrapar a una persona","Daña el balde","Reduce la visibilidad del espejo"],correcta:1,explicacion:"Al girar la torreta, el contrapeso trasero barre un área amplia que puede atrapar o aplastar a una persona cercana."},
+    {pregunta:"¿Qué es una charla de seguridad de cinco minutos?",opciones:["Una pausa para descansar","Una conversación breve del equipo sobre los riesgos del día","Un reporte de producción","Una revisión del motor"],correcta:1,explicacion:"La charla de inicio o de 5 minutos alinea al equipo sobre los riesgos y controles del trabajo del día."},
+    {pregunta:"Si ves a una persona a pie dentro de tu área de operación, debes:",opciones:["Continuar, es su responsabilidad","Detener la operación y no reanudar hasta que se retire o se establezca contacto","Tocar la bocina y seguir","Girar hacia el otro lado"],correcta:1,explicacion:"La interacción equipo-persona es un riesgo crítico; se detiene la operación hasta asegurar que nadie esté en peligro."},
+    {pregunta:"El autocuidado en minería significa:",opciones:["Trabajar solo sin ayuda","Cuidar de tu propia seguridad y la de los demás activamente","Cuidar únicamente la máquina","Hacer el trabajo más rápido"],correcta:1,explicacion:"El autocuidado implica responsabilizarse de la seguridad propia y contribuir a la de los compañeros."},
+    {pregunta:"Un 'casi accidente' (incidente sin lesión) debe:",opciones:["Ignorarse porque no pasó nada","Reportarse para evitar que se repita con consecuencias","Comentarse solo entre operadores","Anotarse al final del mes"],correcta:1,explicacion:"Los casi accidentes avisan de un peligro; reportarlos permite corregir antes de que ocurra una lesión real."},
+    {pregunta:"Antes de bajar de la cabina de la excavadora debes:",opciones:["Saltar rápidamente","Usar los tres puntos de apoyo y mirar hacia la máquina","Bajar de espaldas al equipo","Bajar con una mano ocupada"],correcta:1,explicacion:"La técnica de tres puntos de apoyo (dos manos y un pie, o dos pies y una mano) previene caídas al subir y bajar."},
+    {pregunta:"La velocidad de desplazamiento del equipo en faena debe ser:",opciones:["La máxima posible para avanzar","La indicada por la señalización y las condiciones del terreno","Libre si no hay nadie cerca","Decidida por cada operador"],correcta:1,explicacion:"Se respeta siempre el límite señalizado y se adapta a la visibilidad, el piso y el entorno."},
+    {pregunta:"¿Qué significa tener 'conciencia situacional'?",opciones:["Conocer la marca del equipo","Estar atento a todo lo que ocurre alrededor mientras operas","Saber la hora del turno","Recordar el procedimiento de memoria"],correcta:1,explicacion:"Es mantener la atención permanente al entorno: personas, otros equipos, taludes y cambios en las condiciones."},
+    {pregunta:"La distancia mínima a una línea eléctrica aérea energizada se respeta porque:",opciones:["Mejora la señal de radio","El contacto o cercanía puede causar electrocución","Protege la pintura del equipo","Evita multas de tránsito"],correcta:1,explicacion:"La pluma puede hacer contacto o arco eléctrico con líneas energizadas, provocando electrocución; se respeta la distancia segura."},
+    {pregunta:"¿Qué es un 'punto ciego' en un equipo pesado?",opciones:["Una falla eléctrica","Una zona que el operador no puede ver desde la cabina","Un sector sin iluminación en la faena","Un error del GPS"],correcta:1,explicacion:"Los puntos ciegos son áreas que el operador no ve; por eso se usan espejos, cámaras y contacto visual antes de moverse."},
+    {pregunta:"Antes de mover el equipo desde detenido, lo correcto es:",opciones:["Partir de inmediato","Hacer sonar la bocina y verificar que no haya personas alrededor","Girar la torreta primero","Acelerar al máximo"],correcta:1,explicacion:"La señal sonora y la verificación visual alertan y confirman que el área está despejada antes de moverse."},
+    {pregunta:"El consumo de alcohol o drogas antes o durante el turno:",opciones:["Se permite en poca cantidad","Está prohibido porque aumenta gravemente el riesgo de accidente","Solo afecta en tareas de altura","Depende del operador"],correcta:1,explicacion:"Alcohol y drogas reducen la atención y el tiempo de reacción; su consumo está prohibido en operaciones mineras."},
+    {pregunta:"¿Qué debe hacer el operador si no conoce el procedimiento de una tarea?",opciones:["Improvisar según su experiencia","Consultar y no ejecutar hasta tener claro el procedimiento","Pedir a un compañero que la haga","Hacerla lento para compensar"],correcta:1,explicacion:"Ante la duda, se consulta; ejecutar sin conocer el procedimiento seguro expone a accidentes."},
+    {pregunta:"La jerarquía de controles de riesgo prioriza primero:",opciones:["El uso de EPP","Eliminar el peligro en su origen","Las señales de advertencia","La capacitación"],correcta:1,explicacion:"Eliminar el peligro es el control más eficaz; el EPP es el último recurso porque solo reduce la consecuencia."},
+    {pregunta:"Cuando operas de noche o con poca visibilidad debes:",opciones:["Aumentar la velocidad para terminar antes","Encender las luces, reducir velocidad y extremar la atención","Operar igual que de día","Apagar luces para no encandilar"],correcta:1,explicacion:"La baja visibilidad exige luces encendidas, menor velocidad y mayor atención para compensar el menor campo visual."},
+    {pregunta:"La principal causa de accidentes graves en minería se relaciona con:",opciones:["Fallas del clima","Actos y condiciones inseguras no controladas","La antigüedad de los equipos","El color de las máquinas"],correcta:1,explicacion:"La mayoría de los accidentes se origina en actos y condiciones inseguras que pudieron ser controladas a tiempo."},
+
+    /* ---------- EPP (10) ---------- */
+    {pregunta:"¿Qué significa la sigla EPP?",opciones:["Equipo de Producción Pesada","Elementos de Protección Personal","Evaluación de Procesos Productivos","Entrenamiento de Personal Profesional"],correcta:1,explicacion:"EPP son los Elementos de Protección Personal que protegen al trabajador frente a los riesgos de la tarea."},
+    {pregunta:"El EPP se considera un control de riesgo:",opciones:["El más importante de todos","La última barrera, cuando no se pudo eliminar el peligro","El único necesario en minería","Opcional si hay experiencia"],correcta:1,explicacion:"El EPP es la última línea de defensa; no elimina el peligro, solo reduce la gravedad de la lesión."},
+    {pregunta:"La protección auditiva se usa principalmente para prevenir:",opciones:["Golpes en la cabeza","Pérdida de audición por ruido","Lesiones en los ojos","Cortes en las manos"],correcta:1,explicacion:"El ruido constante de los equipos puede causar sordera profesional; los protectores auditivos la previenen."},
+    {pregunta:"Los lentes de seguridad protegen contra:",opciones:["El ruido del motor","Proyección de partículas y polvo a los ojos","Vibraciones de la máquina","Olores de combustible"],correcta:1,explicacion:"Protegen los ojos de partículas, polvo, astillas y salpicaduras que pueden causar lesiones graves."},
+    {pregunta:"¿Con qué frecuencia debes revisar el estado de tu EPP?",opciones:["Una vez al mes","Al inicio de cada turno","Solo cuando se rompe","Cuando lo indica el supervisor"],correcta:1,explicacion:"El EPP se revisa al inicio de cada turno para asegurar que esté completo y en buen estado."},
+    {pregunta:"El chaleco reflectante sirve para:",opciones:["Abrigar al operador","Hacer visible al trabajador ante equipos y vehículos","Proteger de cortes","Identificar el cargo"],correcta:1,explicacion:"La alta visibilidad permite que operadores de otros equipos vean al trabajador, especialmente de noche."},
+    {pregunta:"Si tu zapato de seguridad tiene la puntera de acero expuesta y dañada, debes:",opciones:["Seguir usándolo","Reemplazarlo porque ya no protege","Pintarlo","Usar dos pares de calcetines"],correcta:1,explicacion:"Un zapato dañado pierde su capacidad de protección; debe reemplazarse de inmediato."},
+    {pregunta:"El uso de guantes adecuados previene principalmente:",opciones:["Problemas auditivos","Cortes, atrapamientos y quemaduras en las manos","Caídas","Fatiga visual"],correcta:1,explicacion:"Los guantes correctos protegen las manos de cortes, abrasiones, quemaduras y contacto con sustancias."},
+    {pregunta:"El EPP debe ser:",opciones:["De cualquier talla disponible","De la talla correcta y adecuado al riesgo de la tarea","Prestado entre compañeros","El más barato disponible"],correcta:1,explicacion:"Un EPP de talla incorrecta o inadecuado al riesgo no protege e incluso puede generar otros peligros."},
+    {pregunta:"¿Quién es responsable de usar correctamente el EPP entregado?",opciones:["Solo el supervisor","El propio trabajador","El área de prevención","El fabricante"],correcta:1,explicacion:"La empresa entrega el EPP, pero el trabajador es responsable de usarlo correctamente y mantenerlo."},
+
+    /* ---------- INSPECCIÓN PREOPERACIONAL (10) ---------- */
+    {pregunta:"La inspección preoperacional se realiza con el equipo:",opciones:["En movimiento","Detenido y en condiciones seguras","Girando la torreta","Cargando un camión"],correcta:1,explicacion:"El chequeo se hace con el equipo detenido y bloqueado para poder revisar de forma segura."},
+    {pregunta:"Si durante la inspección detectas una falla crítica, debes:",opciones:["Operar con precaución","No operar el equipo y reportar la falla","Repararla tú mismo","Esperar al siguiente turno para avisar"],correcta:1,explicacion:"Una falla crítica impide operar; el equipo se deja fuera de servicio y se reporta para su reparación."},
+    {pregunta:"¿Cuál de estos elementos se revisa en la inspección preoperacional?",opciones:["El color de la cabina","Niveles de aceite, refrigerante y estado de mangueras","La radio musical","El asiento del acompañante"],correcta:1,explicacion:"Se revisan niveles, fugas, orugas, mangueras, luces, alarmas, extintor y cinturón, entre otros puntos."},
+    {pregunta:"El registro del check list preoperacional sirve para:",opciones:["Perder tiempo","Dejar evidencia del estado del equipo y detectar fallas",'Decorar la cabina',"Reemplazar el manual"],correcta:1,explicacion:"El registro documenta el estado del equipo y respalda la detección oportuna de fallas."},
+    {pregunta:"Al revisar las orugas o tren de rodaje buscas principalmente:",opciones:["Que estén limpias","Tensión correcta, desgaste y elementos sueltos o dañados","Que tengan el color original","Que hagan ruido"],correcta:1,explicacion:"Se verifica tensión, desgaste de zapatas y rodillos, y que no haya piezas sueltas o dañadas."},
+    {pregunta:"La revisión del extintor del equipo consiste en verificar:",opciones:["Solo que exista","Que esté presente, cargado, vigente y accesible","Su color","Que nunca se haya usado"],correcta:1,explicacion:"El extintor debe estar presente, con carga, dentro de su fecha y de fácil acceso ante una emergencia."},
+    {pregunta:"Si ves manchas de aceite bajo la máquina antes de operar, esto indica:",opciones:["Que el equipo está bien lubricado","Una posible fuga que debe revisarse","Que hace calor","Que falta pintura"],correcta:1,explicacion:"Las manchas bajo el equipo pueden indicar una fuga; debe identificarse el origen antes de operar."},
+    {pregunta:"El cinturón de seguridad de la cabina se revisa porque:",opciones:["Es decorativo","Protege al operador en caso de volcamiento o impacto","Mejora la postura","Lo exige la radio"],correcta:1,explicacion:"El cinturón mantiene al operador dentro de la cabina protegida ante un volcamiento, evitando ser aplastado."},
+    {pregunta:"Las luces y alarmas de retroceso se revisan para:",opciones:["Ahorrar batería","Garantizar visibilidad y advertencia a terceros","Cumplir una formalidad","Mejorar el sonido"],correcta:1,explicacion:"Luces y alarma de retroceso advierten a personas y equipos de los movimientos de la máquina."},
+    {pregunta:"¿Qué haces si al revisar notas el nivel de combustible muy bajo?",opciones:["Operas hasta que se acabe","Reportas y abasteces según procedimiento antes de operar","Lo ignoras","Agregas agua"],correcta:1,explicacion:"Se abastece de forma segura antes de iniciar; quedarse sin combustible en una maniobra es peligroso."},
+
+    /* ---------- EXCAVADORA Y COMPONENTES (15) ---------- */
+    {pregunta:"La parte de la excavadora que gira 360° es:",opciones:["El tren de rodaje","La estructura superior o torreta","El balde solamente","Las orugas"],correcta:1,explicacion:"La torreta o estructura superior gira sobre el tren de rodaje permitiendo rotación de 360°."},
+    {pregunta:"El 'boom' de la excavadora corresponde a:",opciones:["El balde","La pluma principal","El motor","El contrapeso"],correcta:1,explicacion:"El boom o pluma es el brazo principal que sube y baja, articulado a la torreta."},
+    {pregunta:"El 'stick' o brazo de la excavadora:",opciones:["Es la oruga","Une la pluma con el balde y acerca o aleja la carga","Es el asiento","Es el motor hidráulico"],correcta:1,explicacion:"El stick o brazo conecta la pluma con el balde y controla el alcance de la excavación."},
+    {pregunta:"El tren de rodaje de una excavadora de orugas sirve para:",opciones:["Girar la torreta","Dar tracción, estabilidad y desplazamiento","Levantar la pluma","Enfriar el motor"],correcta:1,explicacion:"Las orugas entregan tracción y estabilidad en terrenos difíciles y permiten el desplazamiento del equipo."},
+    {pregunta:"El contrapeso de la excavadora se ubica en:",opciones:["La parte delantera","La parte trasera de la torreta","Dentro del balde","Bajo las orugas"],correcta:1,explicacion:"El contrapeso va en la parte trasera de la torreta para equilibrar el peso de la carga en el balde."},
+    {pregunta:"Los dientes del balde (cucharón) cumplen la función de:",opciones:["Decorar el balde","Penetrar y romper el material para facilitar el carguío","Pesar la carga","Frenar la máquina"],correcta:1,explicacion:"Los dientes concentran la fuerza para penetrar el terreno y soltar el material a cargar."},
+    {pregunta:"La cabina ROPS/FOPS de la excavadora protege contra:",opciones:["El ruido únicamente","Volcamiento y caída de objetos","El polvo solamente","El frío"],correcta:1,explicacion:"ROPS protege ante volcamiento y FOPS ante caída de objetos; son estructuras de seguridad de la cabina."},
+    {pregunta:"La rotación de la torreta es impulsada por:",opciones:["Las orugas","Un motor de giro hidráulico y su corona","El contrapeso","El balde"],correcta:1,explicacion:"Un motor hidráulico de giro mueve la corona dentada que hace rotar la torreta sobre el tren de rodaje."},
+    {pregunta:"El cilindro hidráulico de la pluma permite:",opciones:["Girar las orugas","Levantar y bajar la pluma","Acelerar el motor","Encender las luces"],correcta:1,explicacion:"Los cilindros hidráulicos de la pluma la elevan y descienden mediante la presión del aceite."},
+    {pregunta:"Al operar, el balde debe llenarse:",opciones:["Siempre al máximo sin importar el peso","Según la capacidad y el peso recomendado del material","Solo hasta la mitad siempre","Con el material más pesado disponible"],correcta:1,explicacion:"Sobrecargar el balde reduce la estabilidad, sobreexige el equipo y aumenta el riesgo de volcamiento."},
+    {pregunta:"El motor diésel de la excavadora debe calentarse antes de exigirlo porque:",opciones:["Gasta menos pintura","Permite que el aceite lubrique bien y evita daños","Hace menos ruido","Carga más rápido"],correcta:1,explicacion:"El calentamiento permite que el aceite alcance temperatura y lubrique correctamente, evitando desgaste prematuro."},
+    {pregunta:"El sistema de giro (swing) debe operarse:",opciones:["Con movimientos bruscos para avanzar","De forma suave y controlada","Siempre a máxima velocidad","Con el balde en alto siempre"],correcta:1,explicacion:"Los giros suaves evitan balanceo de la carga, pérdida de estabilidad y desgaste del sistema."},
+    {pregunta:"Las mangueras hidráulicas en mal estado representan riesgo de:",opciones:["Mejor rendimiento","Fuga a presión, pérdida de fuerza e incendio","Más velocidad","Menos ruido"],correcta:1,explicacion:"Una manguera dañada puede reventar, provocar fugas a presión, pérdida de control e incendios."},
+    {pregunta:"El indicador de temperatura del motor en rojo significa:",opciones:["Que el motor está frío","Sobrecalentamiento: hay que detener y revisar","Que falta combustible","Que la radio está encendida"],correcta:1,explicacion:"El sobrecalentamiento puede dañar el motor; se debe detener de forma segura y revisar la causa."},
+    {pregunta:"El acumulador de presión de una excavadora puede ser peligroso porque:",opciones:["Hace ruido","Guarda energía hidráulica aun con el motor apagado","Consume batería","Pesa mucho"],correcta:1,explicacion:"El acumulador mantiene presión aunque el motor esté apagado; por eso se libera presión antes de intervenir."},
+
+    /* ---------- SISTEMA HIDRÁULICO (10) ---------- */
+    {pregunta:"El sistema hidráulico de la excavadora funciona con:",opciones:["Aire comprimido","Aceite a presión impulsado por una bomba","Agua","Electricidad de la batería"],correcta:1,explicacion:"Una bomba impulsa aceite a presión que mueve cilindros y motores hidráulicos del equipo."},
+    {pregunta:"Nunca se debe buscar una fuga hidráulica a presión con la mano porque:",opciones:["Ensucia los guantes","El chorro fino puede perforar la piel e inyectar aceite","Enfría la mano","Gasta aceite"],correcta:1,explicacion:"El aceite a alta presión puede penetrar la piel causando una lesión grave; se usa un cartón para detectar la fuga."},
+    {pregunta:"El nivel bajo de aceite hidráulico provoca:",opciones:["Más fuerza","Pérdida de fuerza, sobrecalentamiento y daño del sistema","Mayor velocidad","Mejor lubricación"],correcta:1,explicacion:"Sin aceite suficiente, el sistema pierde fuerza, se recalienta y puede dañarse gravemente."},
+    {pregunta:"Antes de desconectar una línea hidráulica para mantención se debe:",opciones:["Dejar el motor andando","Liberar la presión del sistema","Girar la torreta","Subir la pluma al máximo"],correcta:1,explicacion:"Liberar la presión evita que el aceite salga con fuerza y cause lesiones al desconectar."},
+    {pregunta:"El aceite hidráulico contaminado con suciedad causa:",opciones:["Mejor rendimiento","Desgaste y fallas en bombas y válvulas","Menor temperatura","Más potencia"],correcta:1,explicacion:"Las partículas dañan los componentes de precisión del sistema; por eso el aceite debe mantenerse limpio."},
+    {pregunta:"Si notas que los movimientos de la pluma están lentos y débiles, puede deberse a:",opciones:["Exceso de combustible","Bajo nivel o presión del sistema hidráulico","Luces encendidas","Radio apagada"],correcta:1,explicacion:"La pérdida de fuerza y lentitud suele indicar bajo nivel de aceite o problemas de presión hidráulica."},
+    {pregunta:"El radiador y enfriador del sistema hidráulico sirven para:",opciones:["Aumentar la presión","Mantener el aceite a temperatura adecuada","Limpiar el aceite","Cargar la batería"],correcta:1,explicacion:"El enfriador evita que el aceite se sobrecaliente, lo que degradaría el aceite y dañaría el sistema."},
+    {pregunta:"Una fuga de aceite hidráulico cerca de superficies calientes representa riesgo de:",opciones:["Mal olor solamente","Incendio","Más potencia","Ruido"],correcta:1,explicacion:"El aceite sobre partes calientes como el escape puede inflamarse y provocar un incendio."},
+    {pregunta:"La bomba hidráulica es accionada por:",opciones:["La batería","El motor diésel del equipo","El balde","El operador manualmente"],correcta:1,explicacion:"El motor diésel acciona la bomba, que convierte esa energía en presión hidráulica para mover el equipo."},
+    {pregunta:"Al terminar la operación, dejar la pluma apoyada en el suelo ayuda a:",opciones:["Gastar más aceite","Liberar presión y dar estabilidad al equipo detenido","Girar más rápido","Cargar la batería"],correcta:1,explicacion:"Apoyar el balde baja el centro de gravedad y libera presión del sistema, dejando el equipo seguro."},
+
+    /* ---------- CARGUÍO (10) ---------- */
+    {pregunta:"Durante el carguío, el balde cargado NUNCA debe pasar sobre:",opciones:["La tolva del camión","La cabina del conductor","El suelo","El montículo de material"],correcta:1,explicacion:"Pasar el balde sobre la cabina expone al conductor a ser golpeado si cae material."},
+    {pregunta:"El camión que va a ser cargado debe estar:",opciones:["En movimiento lento","Detenido, con freno aplicado y en posición correcta","Con el motor apagado y sin freno","Girando"],correcta:1,explicacion:"El camión detenido y frenado en su posición permite un carguío seguro y preciso."},
+    {pregunta:"Para reducir el ciclo y el riesgo, el ángulo de giro de la torreta al cargar debe ser:",opciones:["Lo más amplio posible","El mínimo necesario","Siempre de 180°","Variable sin control"],correcta:1,explicacion:"Un ángulo de giro reducido disminuye el tiempo de ciclo, el desgaste y el riesgo de inestabilidad."},
+    {pregunta:"La carga en la tolva del camión debe distribuirse:",opciones:["Toda hacia atrás","De forma pareja y centrada","Toda hacia un costado","Sobre la cabina"],correcta:1,explicacion:"Una carga pareja y centrada da estabilidad al camión y evita sobrepeso en un eje."},
+    {pregunta:"Sobrecargar el camión más allá de su capacidad:",opciones:["Mejora la productividad sin riesgo","Aumenta el riesgo de accidentes y daña el equipo","No tiene consecuencias","Ahorra combustible"],correcta:1,explicacion:"El sobrepeso afecta frenos, neumáticos y estabilidad del camión, aumentando el riesgo de accidente."},
+    {pregunta:"La comunicación con el conductor del camión durante el carguío se realiza:",opciones:["Solo con gestos improvisados","Según el protocolo establecido (radio y señales acordadas)","Gritando","No es necesaria"],correcta:1,explicacion:"Un protocolo claro de comunicación evita malentendidos y movimientos peligrosos durante el carguío."},
+    {pregunta:"Antes de iniciar la carga, el operador de la excavadora debe asegurarse de que:",opciones:["El camión esté correctamente posicionado y detenido","La radio esté apagada","El balde esté vacío de aire","El motor esté frío"],correcta:0,explicacion:"Confirmar la posición y detención del camión es clave para un carguío seguro."},
+    {pregunta:"El polvo generado durante el carguío se controla porque:",opciones:["Es solo molesto","Reduce la visibilidad y afecta la salud respiratoria","Daña la pintura","Aumenta el peso"],correcta:1,explicacion:"El polvo reduce la visibilidad del área de trabajo y es un riesgo para la salud; se controla con agua o supresores."},
+    {pregunta:"Si el conductor del camión se baja de la cabina durante el carguío, el operador debe:",opciones:["Seguir cargando","Detener la operación de inmediato","Cargar más rápido","Girar hacia otro lado"],correcta:1,explicacion:"Nunca se opera el balde cerca de un camión con personas a pie; se detiene hasta que vuelva a lugar seguro."},
+    {pregunta:"La altura desde la que se suelta el material al camión debe ser:",opciones:["La mayor posible","La mínima necesaria para evitar daños e impactos","Siempre sobre la cabina","Sin importancia"],correcta:1,explicacion:"Soltar desde baja altura reduce el impacto sobre la tolva, el polvo y el riesgo de rebote de material."},
+
+    /* ---------- MEDIO AMBIENTE (5) ---------- */
+    {pregunta:"Ante un derrame de combustible en el suelo, lo correcto es:",opciones:["Cubrirlo con tierra","Contenerlo con material absorbente y reportarlo","Lavarlo con agua al canal","Dejar que se evapore"],correcta:1,explicacion:"El derrame se contiene con absorbentes y se reporta; nunca se oculta con tierra ni se arrastra al agua."},
+    {pregunta:"El kit antiderrame del equipo debe:",opciones:["Guardarse en bodega lejos","Estar accesible y el operador debe saber usarlo","Usarse solo por mantención","Permanecer sellado siempre"],correcta:1,explicacion:"El kit debe estar disponible y el operador capacitado para actuar rápido ante un derrame."},
+    {pregunta:"Los residuos generados en faena (filtros, trapos con aceite) deben:",opciones:["Enterrarse","Disponerse en los contenedores correspondientes según tipo","Quemarse en terreno","Dejarse en cualquier lado"],correcta:1,explicacion:"Los residuos, especialmente peligrosos, se segregan y disponen según el procedimiento ambiental."},
+    {pregunta:"El cuidado del medio ambiente en la operación es:",opciones:["Responsabilidad solo del área ambiental","Parte del trabajo de todo operador","Opcional si hay apuro","Tarea del turno de noche"],correcta:1,explicacion:"La protección ambiental es responsabilidad de todos, incluido el operador en su día a día."},
+    {pregunta:"Dejar el motor funcionando innecesariamente en ralentí por largos periodos:",opciones:["Es recomendable siempre","Genera emisiones y consumo evitables","Mejora el motor","No tiene efecto"],correcta:1,explicacion:"El ralentí prolongado innecesario consume combustible y emite gases sin aportar al trabajo; se evita."},
+
+    /* ---------- COMUNICACIÓN RADIAL (5) ---------- */
+    {pregunta:"Antes de transmitir por radio debes:",opciones:["Hablar de inmediato","Escuchar que el canal esté libre","Subir el volumen al máximo","Cambiar de canal varias veces"],correcta:1,explicacion:"Escuchar primero evita 'pisar' la comunicación de otro equipo y pérdida de mensajes."},
+    {pregunta:"Un mensaje por radio en faena debe ser:",opciones:["Largo y detallado","Corto, claro y directo","Con bromas para distender","En clave personal"],correcta:1,explicacion:"Los mensajes breves y claros evitan confusiones y mantienen el canal disponible."},
+    {pregunta:"La confirmación 'copiado' significa que:",opciones:["No se entendió","El mensaje fue recibido y entendido","Hay que repetir todo","Se corta la comunicación"],correcta:1,explicacion:"'Copiado' confirma la recepción correcta del mensaje, cerrando el ciclo de comunicación."},
+    {pregunta:"La radio de faena NO debe usarse para:",opciones:["Coordinar maniobras","Reportar emergencias","Conversaciones personales prolongadas","Pedir autorizaciones"],correcta:2,explicacion:"El canal es para la operación; las conversaciones personales ocupan un recurso crítico de seguridad."},
+    {pregunta:"Si tu radio falla durante una maniobra crítica, debes:",opciones:["Continuar sin comunicación","Detener la maniobra hasta restablecer la comunicación","Usar señas a la distancia","Apagar el equipo bruscamente"],correcta:1,explicacion:"Sin comunicación en una maniobra crítica aumenta el riesgo; se detiene hasta recuperar el contacto."},
+
+    /* ---------- EMERGENCIAS (5) ---------- */
+    {pregunta:"Ante un incendio en tu equipo, lo primero es:",opciones:["Apagar el fuego aunque sea grande","Ponerte a salvo y dar la alarma por radio","Salvar la carga","Buscar la causa"],correcta:1,explicacion:"Primero las personas: ponerse a salvo y alertar; el fuego pequeño se ataca solo si es seguro hacerlo."},
+    {pregunta:"El punto de encuentro en una evacuación es:",opciones:["Donde cada uno prefiera","El lugar definido para reunirse y contar al personal","La cabina del equipo","La bodega"],correcta:1,explicacion:"El punto de encuentro permite verificar que todas las personas estén a salvo tras la evacuación."},
+    {pregunta:"Si presencias un accidente con una persona lesionada, debes:",opciones:["Mover a la persona rápido","Dar alarma, no mover a el herido salvo peligro y esperar ayuda","Seguir trabajando","Retirarte del lugar"],correcta:1,explicacion:"Se da la alarma y, salvo riesgo mayor, no se mueve al lesionado para no agravar las lesiones."},
+    {pregunta:"El extintor del equipo se utiliza:",opciones:["Solo cuando llega la brigada","En un fuego incipiente y si es seguro hacerlo","Para cualquier tamaño de fuego","Nunca por el operador"],correcta:1,explicacion:"El extintor sirve para fuegos incipientes; si el fuego crece, se evacúa y se deja a la brigada."},
+    {pregunta:"Conocer las vías de evacuación de la faena permite:",opciones:["Trabajar más rápido","Salir de forma segura ante una emergencia","Ahorrar combustible","Mejorar la radio"],correcta:1,explicacion:"Saber las rutas de evacuación y salidas asegura una respuesta rápida y ordenada ante emergencias."},
+
+    /* ---------- RIESGOS CRÍTICOS Y OPERACIÓN SEGURA (10) ---------- */
+    {pregunta:"La interacción equipo-persona es un riesgo crítico porque:",opciones:["Daña la pintura","Puede causar atropello o aplastamiento de personas","Gasta combustible","Hace ruido"],correcta:1,explicacion:"El contacto entre equipos pesados y personas a pie puede ser mortal; es un riesgo crítico con controles obligatorios."},
+    {pregunta:"Al operar cerca de un talud, el principal riesgo crítico es:",opciones:["Rayar el balde","Derrumbe o caída de material sobre el equipo","Gastar orugas","Perder señal de radio"],correcta:1,explicacion:"La inestabilidad del talud puede provocar derrumbes; se respetan distancias y se vigilan señales de falla."},
+    {pregunta:"Un control crítico es:",opciones:["Una sugerencia opcional","Una medida obligatoria que previene una fatalidad","Un trámite administrativo","Una meta de producción"],correcta:1,explicacion:"Los controles críticos son barreras obligatorias que evitan accidentes fatales; no se pueden omitir."},
+    {pregunta:"El volcamiento de la excavadora se previene principalmente:",opciones:["Aumentando la velocidad","Operando en terreno estable, sin sobrecargar y con giros suaves","Girando siempre con carga en pendiente","Trabajando de costado en la pendiente"],correcta:1,explicacion:"Terreno firme, carga adecuada y maniobras suaves mantienen la estabilidad y evitan el volcamiento."},
+    {pregunta:"La fatiga del operador es un riesgo crítico porque:",opciones:["Mejora la concentración","Reduce la atención y el tiempo de reacción, como el alcohol","Solo da sueño","No afecta la operación"],correcta:1,explicacion:"La fatiga deteriora reflejos y juicio; operar fatigado es causa frecuente de accidentes graves."},
+    {pregunta:"Para controlar el riesgo de energías peligrosas en mantención se usa:",opciones:["Solo una advertencia verbal","Bloqueo y etiquetado (candado y tarjeta)","Mayor velocidad","Trabajo nocturno"],correcta:1,explicacion:"El bloqueo y etiquetado aísla la energía para que el equipo no se active mientras alguien lo interviene."},
+    {pregunta:"Al retroceder con la excavadora, el control más efectivo contra atropellos es:",opciones:["Acelerar para salir rápido","Verificar el área, usar cámaras/espejos y la alarma de retroceso","Confiar en que no hay nadie","Apagar la alarma para no molestar"],correcta:1,explicacion:"La verificación del área, las ayudas visuales y la alarma reducen el riesgo en una zona de punto ciego."},
+    {pregunta:"Si las condiciones del terreno cambian y ya no son seguras, el operador debe:",opciones:["Continuar porque ya empezó","Detener la operación y reevaluar el riesgo","Trabajar más rápido","Ignorarlo si falta poco"],correcta:1,explicacion:"Ante cambios que aumentan el riesgo, se detiene y reevalúa antes de continuar la tarea."},
+    {pregunta:"El uso del cinturón de seguridad en la excavadora es un control crítico porque:",opciones:["Mejora la comodidad","En un volcamiento evita que el operador salga y sea aplastado","Lo exige la radio","Reduce el ruido"],correcta:1,explicacion:"El cinturón mantiene al operador dentro de la cabina protegida ROPS durante un volcamiento."},
+    {pregunta:"La mejor actitud frente a los riesgos críticos es:",opciones:["Asumirlos para avanzar más rápido","Identificarlos y aplicar siempre sus controles","Delegarlos al supervisor","Evitarlos solo si hay fiscalización"],correcta:1,explicacion:"Reconocer los riesgos críticos y aplicar sus controles de forma permanente es lo que evita fatalidades."}
+  ];
+
+  /* ================================================================
+     3. ESTADO DE LA APLICACIÓN
+     ================================================================ */
+  const TOTAL_PRUEBA = 80;      // cantidad de preguntas por prueba
+  let preguntasPrueba = [];     // las 80 seleccionadas al azar
+  let indiceActual = 0;         // pregunta actual
+  let seleccion = null;         // índice de opción elegida
+  let correctasCount = 0;       // respuestas correctas
+  let errores = [];             // preguntas respondidas mal (para revisión)
+
+  /* ================================================================
+     4. NAVEGACIÓN ENTRE VISTAS
+     ================================================================ */
+  function mostrarVista(id){
+    document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+    const v = document.getElementById(id);
+    v.classList.add('activa');
+    // El botón volver se muestra en todas las vistas menos el inicio
+    document.getElementById('btnVolver').style.display = (id === 'v-inicio') ? 'none' : 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function irInicio(){ actualizarStats(); mostrarVista('v-inicio'); }
+  function irCurso(){ renderModulos(); mostrarVista('v-curso'); }
+
+  // Botón volver: lógica según la vista activa
+  document.getElementById('btnVolver').addEventListener('click', () => {
+    const activa = document.querySelector('.vista.activa').id;
+    if(activa === 'v-modulo') irCurso();
+    else if(activa === 'v-revision') mostrarVista('v-resultado');
+    else if(activa === 'v-prueba' || activa === 'v-feedback'){
+      confirmar('¿Deseas salir de la prueba? Se perderá el avance actual.', irInicio);
+    }
+    else irInicio();
+  });
+
+  // Cuadro de confirmación propio (funciona en cualquier navegador y entorno seguro)
+  function confirmar(texto, alConfirmar){
+    const modal = document.getElementById('modal');
+    document.getElementById('modalTexto').textContent = texto;
+    modal.style.display = 'flex';
+    document.getElementById('modalSi').onclick = () => { modal.style.display = 'none'; alConfirmar(); };
+    document.getElementById('modalNo').onclick = () => { modal.style.display = 'none'; };
+  }
+
+  /* ================================================================
+     5. MODO CURSO
+     ================================================================ */
+  function renderModulos(){
+    const vistos = JSON.parse(localStorage.getItem('modulosVistos') || '[]');
+    const cont = document.getElementById('listaModulos');
+    cont.innerHTML = '';
+    MODULOS.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.className = 'modulo-item' + (vistos.includes(i) ? ' visto' : '');
+      div.onclick = () => abrirModulo(i);
+      div.innerHTML = `<div class="n">${i+1}</div><div class="t">${m.titulo}</div><div class="flecha">›</div>`;
+      cont.appendChild(div);
+    });
+  }
+
+  function abrirModulo(i){
+    const m = MODULOS[i];
+    // Marcar como visto
+    const vistos = JSON.parse(localStorage.getItem('modulosVistos') || '[]');
+    if(!vistos.includes(i)){ vistos.push(i); localStorage.setItem('modulosVistos', JSON.stringify(vistos)); }
+
+    const cont = document.getElementById('detalleModulo');
+    cont.innerHTML = `
+      <div class="tarjeta">
+        <h2>${i+1}. ${m.titulo}</h2>
+        <p>${m.texto}</p>
+        <div class="consejo"><b>💡 Consejo Importante</b>${m.consejo}</div>
+      </div>
+      <div class="ejercicio">
+        <div class="preg">✍️ Mini ejercicio: ${m.ejercicio.preg}</div>
+        <div id="opcionesEj"></div>
+        <div id="resultadoEj" style="margin-top:10px;font-weight:700;"></div>
+      </div>`;
+    const ops = document.getElementById('opcionesEj');
+    m.ejercicio.opciones.forEach((op, idx) => {
+      const b = document.createElement('button');
+      b.className = 'opcion-ej';
+      b.textContent = op;
+      b.onclick = () => responderEjercicio(b, idx, m.ejercicio.correcta);
+      ops.appendChild(b);
+    });
+    mostrarVista('v-modulo');
+  }
+
+  function responderEjercicio(boton, elegida, correcta){
+    const botones = boton.parentElement.querySelectorAll('.opcion-ej');
+    botones.forEach(b => b.disabled = true);
+    const res = document.getElementById('resultadoEj');
+    if(elegida === correcta){
+      boton.classList.add('ok');
+      res.textContent = '✅ ¡Correcto! Muy bien.';
+      res.style.color = 'var(--verde)';
+      sonido(true);
+    } else {
+      boton.classList.add('mal');
+      botones[correcta].classList.add('ok');
+      res.textContent = '❌ La respuesta correcta está marcada en verde.';
+      res.style.color = 'var(--rojo)';
+      sonido(false);
+    }
+  }
+
+  /* ================================================================
+     6. MODO PRUEBA
+     ================================================================ */
+  // Baraja un arreglo (Fisher-Yates) y toma las primeras n
+  function seleccionarAleatorias(arr, n){
+    const copia = arr.slice();
+    for(let i = copia.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [copia[i], copia[j]] = [copia[j], copia[i]];
+    }
+    return copia.slice(0, n);
+  }
+
+  function iniciarPrueba(){
+    preguntasPrueba = seleccionarAleatorias(BANCO, TOTAL_PRUEBA);
+    indiceActual = 0;
+    correctasCount = 0;
+    errores = [];
+    mostrarPregunta();
+    mostrarVista('v-prueba');
+  }
+
+  function mostrarPregunta(){
+    seleccion = null;
+    const p = preguntasPrueba[indiceActual];
+    document.getElementById('contador').textContent = `Pregunta ${indiceActual+1} de ${TOTAL_PRUEBA}`;
+    document.getElementById('barra').style.width = ((indiceActual) / TOTAL_PRUEBA * 100) + '%';
+    document.getElementById('preguntaTxt').textContent = p.pregunta;
+    const cont = document.getElementById('opciones');
+    cont.innerHTML = '';
+    const letras = ['A','B','C','D'];
+    p.opciones.forEach((op, idx) => {
+      const b = document.createElement('button');
+      b.className = 'opcion';
+      b.innerHTML = `<span class="letra">${letras[idx]}</span><span>${op}</span>`;
+      b.onclick = () => elegirOpcion(b, idx);
+      cont.appendChild(b);
+    });
+    document.getElementById('btnResponder').disabled = true;
+  }
+
+  function elegirOpcion(boton, idx){
+    document.querySelectorAll('#opciones .opcion').forEach(b => b.classList.remove('sel'));
+    boton.classList.add('sel');
+    seleccion = idx;
+    document.getElementById('btnResponder').disabled = false;
+  }
+
+  function responder(){
+    if(seleccion === null) return;
+    const p = preguntasPrueba[indiceActual];
+    const esCorrecta = (seleccion === p.correcta);
+    const box = document.getElementById('feedbackBox');
+
+    if(esCorrecta){
+      correctasCount++;
+      box.innerHTML = `
+        <div class="feedback ok">
+          <div class="icono">✅</div>
+          <h2>Correcto</h2>
+          <div class="expl"><b>Por qué:</b> ${p.explicacion}</div>
+        </div>`;
+      sonido(true);
+    } else {
+      // Registrar el error para la revisión final
+      errores.push({ pregunta: p.pregunta, correcta: p.opciones[p.correcta], tuRespuesta: p.opciones[seleccion], explicacion: p.explicacion });
+      box.innerHTML = `
+        <div class="feedback mal">
+          <div class="icono">❌</div>
+          <h2>Incorrecto</h2>
+          <div class="correcta">Respuesta correcta: ${p.opciones[p.correcta]}</div>
+          <div class="expl"><b>Explicación:</b> ${p.explicacion}</div>
+        </div>`;
+      sonido(false);
+    }
+    // Texto del botón según si es la última
+    document.getElementById('btnSiguiente').innerHTML =
+      (indiceActual + 1 >= TOTAL_PRUEBA) ? 'Ver resultado final ›' : 'Siguiente pregunta ›';
+    mostrarVista('v-feedback');
+  }
+
+  function siguientePregunta(){
+    indiceActual++;
+    if(indiceActual >= TOTAL_PRUEBA){
+      mostrarResultado();
+    } else {
+      mostrarPregunta();
+      mostrarVista('v-prueba');
+    }
+  }
+
+  /* ================================================================
+     7. RESULTADO FINAL
+     ================================================================ */
+  function mostrarResultado(){
+    const incorrectas = TOTAL_PRUEBA - correctasCount;
+    const pct = Math.round(correctasCount / TOTAL_PRUEBA * 100);
+
+    document.getElementById('rTotal').textContent = TOTAL_PRUEBA;
+    document.getElementById('rCorrectas').textContent = correctasCount;
+    document.getElementById('rIncorrectas').textContent = incorrectas;
+
+    // Medidor circular animado
+    animarMedidor(pct);
+
+    // Veredicto según porcentaje
+    const v = document.getElementById('veredicto');
+    if(pct >= 90){ v.className = 'veredicto exc'; v.textContent = '🏆 Excelente'; }
+    else if(pct >= 80){ v.className = 'veredicto apr'; v.textContent = '✅ Aprobado'; }
+    else if(pct >= 70){ v.className = 'veredicto ref'; v.textContent = '⚠️ Debe reforzar algunos temas'; }
+    else { v.className = 'veredicto rep'; v.textContent = '❌ Debe estudiar nuevamente'; }
+
+    // Botón de revisión: solo si hay errores
+    document.getElementById('btnRevisar').style.display = errores.length ? 'flex' : 'none';
+
+    // Guardar estadísticas en LocalStorage
+    guardarEstadisticas(pct);
+
+    mostrarVista('v-resultado');
+
+    // Celebración si supera el 90%
+    if(pct >= 90){ setTimeout(lanzarConfetti, 300); }
+  }
+
+  function animarMedidor(pct){
+    const aro = document.getElementById('aroPct');
+    const num = document.getElementById('pctNum');
+    const circ = 2 * Math.PI * 95; // circunferencia (r=95) ≈ 597
+    // Color del aro según resultado
+    let color = '#d1342f';
+    if(pct >= 90) color = '#7a3ff2';
+    else if(pct >= 80) color = '#1f9d55';
+    else if(pct >= 70) color = '#ff7a00';
+    aro.setAttribute('stroke', color);
+    num.style.color = color;
+
+    // Animación progresiva
+    let actual = 0;
+    const paso = Math.max(1, Math.round(pct / 40));
+    const timer = setInterval(() => {
+      actual += paso;
+      if(actual >= pct){ actual = pct; clearInterval(timer); }
+      num.textContent = actual + '%';
+      aro.style.strokeDashoffset = circ - (circ * actual / 100);
+    }, 25);
+  }
+
+  /* ================================================================
+     8. REVISIÓN DE ERRORES
+     ================================================================ */
+  function revisarErrores(){
+    const cont = document.getElementById('listaErrores');
+    document.getElementById('revSubtitulo').textContent =
+      errores.length + ' pregunta(s) para repasar. Lee la explicación de cada una.';
+    cont.innerHTML = '';
+    errores.forEach((e, i) => {
+      const div = document.createElement('div');
+      div.className = 'error-item';
+      div.innerHTML = `
+        <div class="q">${i+1}. ${e.pregunta}</div>
+        <div class="tu">✗ Tu respuesta: ${e.tuRespuesta}</div>
+        <div class="ok">✓ Respuesta correcta: ${e.correcta}</div>
+        <div class="ex">💡 ${e.explicacion}</div>`;
+      cont.appendChild(div);
+    });
+    mostrarVista('v-revision');
+  }
+
+  /* ================================================================
+     9. GUARDADO LOCAL (LocalStorage)
+     ================================================================ */
+  function guardarEstadisticas(pct){
+    const mejor = parseInt(localStorage.getItem('mejorPuntaje') || '0', 10);
+    if(pct > mejor) localStorage.setItem('mejorPuntaje', pct);
+    localStorage.setItem('ultimoPuntaje', pct);
+    const intentos = parseInt(localStorage.getItem('intentos') || '0', 10) + 1;
+    localStorage.setItem('intentos', intentos);
+    const hoy = new Date();
+    const fecha = hoy.toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+    localStorage.setItem('ultimaFecha', fecha);
+  }
+
+  function actualizarStats(){
+    const mejor = localStorage.getItem('mejorPuntaje');
+    const ultimo = localStorage.getItem('ultimoPuntaje');
+    const intentos = localStorage.getItem('intentos') || '0';
+    const fecha = localStorage.getItem('ultimaFecha');
+    document.getElementById('stMejor').textContent = mejor ? mejor + '%' : '—';
+    document.getElementById('stUltimo').textContent = ultimo ? ultimo + '%' : '—';
+    document.getElementById('stIntentos').textContent = intentos;
+    document.getElementById('stFecha').textContent = fecha || '—';
+  }
+
+  /* ================================================================
+     10. SONIDOS (generados con Web Audio API, sin archivos)
+     ================================================================ */
+  let audioCtx = null;
+  function sonido(correcto){
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if(correcto){
+        // Dos notas ascendentes (éxito)
+        beep(660, 0, 0.12); beep(990, 0.12, 0.18);
+      } else {
+        // Nota grave descendente (error)
+        beep(300, 0, 0.12); beep(200, 0.12, 0.22);
+      }
+    }catch(e){ /* si el navegador bloquea el audio, se ignora */ }
+  }
+  function beep(freq, inicio, dur){
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    const t = audioCtx.currentTime + inicio;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.start(t); osc.stop(t + dur + 0.02);
+  }
+
+  /* ================================================================
+     11. CONFETTI (JavaScript puro sobre canvas)
+     ================================================================ */
+  function lanzarConfetti(){
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const colores = ['#ff7a00','#0b4f8a','#1f9d55','#ffd23f','#d1342f','#7a3ff2'];
+    const piezas = [];
+    for(let i=0;i<140;i++){
+      piezas.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*-canvas.height,
+        w: 8+Math.random()*8,
+        h: 10+Math.random()*10,
+        color: colores[Math.floor(Math.random()*colores.length)],
+        vel: 2+Math.random()*4,
+        giro: Math.random()*Math.PI,
+        velGiro: (Math.random()-0.5)*0.3,
+        bal: Math.random()*2
+      });
+    }
+    let frames = 0;
+    function dibujar(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      piezas.forEach(p => {
+        p.y += p.vel;
+        p.x += Math.sin(p.y/30)*p.bal;
+        p.giro += p.velGiro;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.giro);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      });
+      frames++;
+      if(frames < 220){ requestAnimationFrame(dibujar); }
+      else { ctx.clearRect(0,0,canvas.width,canvas.height); }
+    }
+    dibujar();
+  }
+
+  /* ================================================================
+     12. INSTALACIÓN COMO APP (PWA) — manifest y service worker
+     ================================================================ */
+  // Manifest generado en línea para permitir "Agregar a pantalla de inicio"
+  (function(){
+    const icono = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b4f8a'/%3E%3Cpath d='M20 62c0-17 13-30 30-30s30 13 30 30' fill='none' stroke='%23ff7a00' stroke-width='8' stroke-linecap='round'/%3E%3Crect x='14' y='60' width='72' height='10' rx='5' fill='%23ff7a00'/%3E%3C/svg%3E";
+    const manifest = {
+      name: "Curso Operador de Excavadora",
+      short_name: "Excavadora",
+      start_url: ".",
+      display: "standalone",
+      orientation: "portrait",
+      background_color: "#0b4f8a",
+      theme_color: "#0b4f8a",
+      icons: [
+        { src: icono, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+        { src: icono, sizes: "512x512", type: "image/svg+xml", purpose: "any" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    document.getElementById('manifest-link').setAttribute('href', URL.createObjectURL(blob));
+  })();
+
+  // Service worker (solo funciona si se abre desde un servidor https, no desde archivo).
+  // Guarda la app para uso sin internet una vez abierta desde un enlace.
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    const swCode = `
+      const CACHE='excavadora-v1';
+      self.addEventListener('install', e => { self.skipWaiting(); });
+      self.addEventListener('activate', e => { self.clients.claim(); });
+      self.addEventListener('fetch', e => {
+        e.respondWith(
+          caches.open(CACHE).then(c =>
+            fetch(e.request).then(r => { c.put(e.request, r.clone()); return r; })
+            .catch(() => c.match(e.request))
+          )
+        );
+      });`;
+    const swBlob = new Blob([swCode], {type:'text/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+  }
+
+  /* ================================================================
+     13. INICIO DE LA APLICACIÓN
+     ================================================================ */
+  actualizarStats();
+  </script>
+</body>
+</html>
